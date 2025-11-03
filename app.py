@@ -29,7 +29,7 @@ def is_admin() -> bool:
     return (expected != "") and (key_in_url == expected)
 
 EMAIL_RE = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
-PHONE_RE = re.compile(r"^[0-9+()\-\s]{7,}$")  # simple; allows +, spaces, dashes, brackets
+PHONE_RE = re.compile(r"^[0-9+()\-\s]{7,}$")
 CSV_PATH = "responses.csv"
 
 def valid_email(s: str) -> bool:
@@ -86,7 +86,7 @@ section.main > div { padding-top: 10px !important; }
   border: 1px solid rgba(21,82,255,.12);
   border-radius: 14px;
   padding: 14px 16px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 .header-wrap {display:flex;align-items:center;gap:14px;margin-bottom:6px;}
 .badge {display:inline-block;background:#E7EEFF;color:#1552FF;border:1px solid #cfe0ff;padding:2px 8px;border-radius:999px;font-size:12px;margin-left:6px;}
@@ -127,7 +127,7 @@ hr{border-color:#eef2ff;}
 .level-table .range-col { white-space:nowrap; width:130px; }
 .level-table .level-col { width:140px; }
 
-/* Likert radios: present options inline and tidy spacing */
+/* Likert radios: inline layout */
 [data-testid="stRadio"] > label { font-weight: 500; }
 [data-testid="stRadio"] > div { flex-wrap: wrap; gap: .6rem 1rem; }
 @media (min-width: 900px){
@@ -228,8 +228,46 @@ questions = [
     ("Performance & Value", "We track and refine models, metrics, and dashboards to keep them relevant.")
 ]
 
+# Pillar definition cards (right column)
+DEFINITIONS = {
+    "People & Leadership": (
+        "<div class='floka-card'><b>What this pillar covers</b><br>"
+        "Vision and sponsorship, culture and behaviors, and the capability to work with data across functions. "
+        "Leaders make value explicit and set the rhythm for evidence-based decisions.</div>"
+    ),
+    "Process & Governance": (
+        "<div class='floka-card'><b>What this pillar covers</b><br>"
+        "How ideas become outcomes: prioritization, standards, ownership, risk & compliance, and a scale/learn rhythm. "
+        "Clear processes reduce rework and increase the hit-rate of analytics initiatives.</div>"
+    ),
+    "Platform & Technology": (
+        "<div class='floka-card'><b>What this pillar covers</b><br>"
+        "The data foundation: integration, automation, security and reliability. "
+        "A governed source of truth and basic engineering practices enable speed with trust.</div>"
+    ),
+    "Performance & Value": (
+        "<div class='floka-card'><b>What this pillar covers</b><br>"
+        "Adoption, measurable business impact, and continuous improvement. "
+        "Track who acts on insights, the results achieved, and retire or refine what is not used.</div>"
+    ),
+}
+
+# Reusable rating legend (right column)
+RATING_GUIDE = """
+<div class='floka-card'>
+  <b>Rating guide</b>
+  <ul style="margin:6px 0 0 18px;">
+    <li><b>1 — Strongly Disagree:</b> practice largely absent or ad hoc</li>
+    <li><b>2 — Disagree:</b> some activity but inconsistent and fragile</li>
+    <li><b>3 — Neutral:</b> partially in place; varies by team</li>
+    <li><b>4 — Agree:</b> established and repeatable in most areas</li>
+    <li><b>5 — Strongly Agree:</b> optimized, measured, and continuously improved</li>
+  </ul>
+</div>
+"""
+
 # -----------------------------------------------------------------------------
-# FORM (LIKERT RADIO BUTTONS)
+# FORM (two-column sections; Likert radios on the left)
 # -----------------------------------------------------------------------------
 likert_options = [
     "1 - Strongly Disagree",
@@ -239,52 +277,36 @@ likert_options = [
     "5 - Strongly Agree"
 ]
 
+def render_section(section_id: str, title: str, idx_range: range, key_prefix: str) -> list:
+    """Render a section with questions on the left and definition + rating guide on the right."""
+    st.markdown(f"<div id='{section_id}'></div>", unsafe_allow_html=True)
+    left, right = st.columns([7,5], vertical_alignment="top")
+
+    answers = []
+    with left:
+        st.subheader(f"🔹 {title}")
+        for i in idx_range:
+            choice = st.radio(
+                questions[i][1],
+                options=likert_options,
+                key=f"{key_prefix}_{i}",
+                horizontal=True
+            )
+            answers.append(int(choice.split(" - ")[0]))
+
+    with right:
+        st.markdown(DEFINITIONS[title], unsafe_allow_html=True)
+        st.markdown(RATING_GUIDE, unsafe_allow_html=True)
+
+    return answers
+
 with st.form("quiz"):
     scores = []
-
-    st.markdown("<div id='people'></div>", unsafe_allow_html=True)
-    st.subheader("🔹 People & Leadership")
-    for i in range(0, 3):
-        choice = st.radio(
-            questions[i][1],
-            options=likert_options,
-            key=f"people_{i}",
-            horizontal=True
-        )
-        scores.append(int(choice.split(" - ")[0]))
-
-    st.markdown("<div id='process'></div>", unsafe_allow_html=True)
-    st.subheader("🔹 Process & Governance")
-    for i in range(3, 6):
-        choice = st.radio(
-            questions[i][1],
-            options=likert_options,
-            key=f"process_{i}",
-            horizontal=True
-        )
-        scores.append(int(choice.split(" - ")[0]))
-
-    st.markdown("<div id='platform'></div>", unsafe_allow_html=True)
-    st.subheader("🔹 Platform & Technology")
-    for i in range(6, 9):
-        choice = st.radio(
-            questions[i][1],
-            options=likert_options,
-            key=f"platform_{i}",
-            horizontal=True
-        )
-        scores.append(int(choice.split(" - ")[0]))
-
-    st.markdown("<div id='performance'></div>", unsafe_allow_html=True)
-    st.subheader("🔹 Performance & Value")
-    for i in range(9, 12):
-        choice = st.radio(
-            questions[i][1],
-            options=likert_options,
-            key=f"performance_{i}",
-            horizontal=True
-        )
-        scores.append(int(choice.split(" - ")[0]))
+    # Sections
+    scores += render_section("people", "People & Leadership", range(0, 3), "people")
+    scores += render_section("process", "Process & Governance", range(3, 6), "process")
+    scores += render_section("platform", "Platform & Technology", range(6, 9), "platform")
+    scores += render_section("performance", "Performance & Value", range(9, 12), "performance")
 
     st.markdown("---")
     st.subheader("Contact (to send you a debrief)")
@@ -507,4 +529,5 @@ if submitted:
 # FOOTER
 # -----------------------------------------------------------------------------
 st.markdown("<div class='footer'>© 2025 FLOKA Solutions • Analytics Readiness Diagnostic</div>", unsafe_allow_html=True)
+
 
