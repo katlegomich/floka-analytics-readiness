@@ -8,7 +8,7 @@ import re, csv, os, datetime
 # PAGE CONFIG
 # -----------------------------------------------------------------------------
 st.set_page_config(
-    page_title="FLOKA • Analytics Readiness Diagnostic",
+    page_title="FLOKA • Analytics Maturity Diagnostic",
     page_icon="floka_logo.png",
     layout="wide"
 )
@@ -155,7 +155,7 @@ with col_logo:
     st.image("floka_logo.png", width=120)
 with col_title:
     st.markdown(
-        "<div class='header-wrap'><h1>Analytics Readiness Diagnostic</h1>"
+        "<div class='header-wrap'><h1>Analytics Maturity Diagnostic</h1>"
         "<span class='badge'>People • Process • Platform • Performance</span></div>",
         unsafe_allow_html=True
     )
@@ -545,6 +545,6 @@ if submitted:
 # -----------------------------------------------------------------------------
 # FOOTER
 # -----------------------------------------------------------------------------
-st.markdown("<div class='footer'>© 2025 FLOKA Solutions • Analytics Readiness Diagnostic</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>© 2025 FLOKA Solutions • Analytics Maturity Diagnostic</div>", unsafe_allow_html=True)
 
 
