@@ -184,38 +184,61 @@ st.markdown("""
 components.html("""
 <script>
 (function(){
+  // ───────── Sticky nav (unchanged) ─────────
   const nav = parent.document.querySelector('#floka-nav');
-  if(!nav) return;
-
-  function scrollToId(id){
-    const el = parent.document.getElementById(id);
-    if(el){ el.scrollIntoView({behavior:'smooth', block:'start'}); }
+  if(nav){
+    function scrollToId(id){
+      const el = parent.document.getElementById(id);
+      if(el){ el.scrollIntoView({behavior:'smooth', block:'start'}); }
+    }
+    // Click to scroll
+    nav.querySelectorAll('.link').forEach(a=>{
+      a.addEventListener('click', e=>{
+        e.preventDefault();
+        scrollToId(a.dataset.target);
+      });
+    });
+    // Active tab on scroll
+    const ids = ['people','process','platform','performance','results'];
+    const observer = new IntersectionObserver((entries)=>{
+      entries.forEach((en)=>{
+        if(en.isIntersecting){
+          nav.querySelectorAll('.link').forEach(x=>x.classList.remove('active'));
+          const active = nav.querySelector(`.link[data-target="${en.target.id}"]`);
+          if(active) active.classList.add('active');
+        }
+      });
+    },{ root: parent.document, rootMargin: '-25% 0px -65% 0px', threshold: [0, 0.01] });
+    ids.forEach(id=>{
+      const el = parent.document.getElementById(id);
+      if(el) observer.observe(el);
+    });
   }
 
-  // Click to scroll
-  nav.querySelectorAll('.link').forEach(a=>{
-    a.addEventListener('click', e=>{
-      e.preventDefault();
-      scrollToId(a.dataset.target);
+  // ───────── Force slider selected track to FLOKA blue ─────────
+  function paintSliders(){
+    // common track element across BaseWeb builds
+    const tracks = parent.document.querySelectorAll(
+      '[data-testid="stSlider"] [data-baseweb="slider"] div:nth-child(2)'
+    );
+    tracks.forEach(t => {
+      t.style.backgroundColor = '#1552FF';
+      t.style.background = '#1552FF';
     });
-  });
-
-  // Active tab on scroll
-  const ids = ['people','process','platform','performance','results'];
-  const observer = new IntersectionObserver((entries)=>{
-    entries.forEach((en)=>{
-      if(en.isIntersecting){
-        nav.querySelectorAll('.link').forEach(x=>x.classList.remove('active'));
-        const active = nav.querySelector(`.link[data-target="${en.target.id}"]`);
-        if(active) active.classList.add('active');
-      }
+    // sometimes a nested child carries the gradient
+    const grads = parent.document.querySelectorAll(
+      '[data-testid="stSlider"] [data-baseweb="slider"] div:nth-child(2) div'
+    );
+    grads.forEach(g => {
+      g.style.backgroundColor = '#1552FF';
+      g.style.background = '#1552FF';
     });
-  },{ root: parent.document, rootMargin: '-25% 0px -65% 0px', threshold: [0, 0.01] });
+  }
 
-  ids.forEach(id=>{
-    const el = parent.document.getElementById(id);
-    if(el) observer.observe(el);
-  });
+  // paint now and on any rerender
+  const mo = new MutationObserver(paintSliders);
+  mo.observe(parent.document.body, {subtree:true, childList:true, attributes:true});
+  paintSliders();
 })();
 </script>
 """, height=0)
