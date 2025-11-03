@@ -96,6 +96,15 @@ section.main > div { padding-top: 10px !important; }
 .footer {text-align:center;color:#6B7280;margin:30px 0 6px;}
 hr{border-color:#eef2ff;}
 
+.tagline{
+  font-size: 22px;     /* bump to 24px if you want even bigger */
+  font-weight: 600;
+  color: #0A1024;
+  opacity: .9;
+  margin: -2px 0 12px 0;
+}
+
+
 /* Sticky nav */
 #floka-nav {
   position: sticky; top: 0; z-index: 1000;
@@ -106,7 +115,7 @@ hr{border-color:#eef2ff;}
 
 /* Solid blue pills for ALL tabs */
 #floka-nav .link {
-  cursor:pointer; padding:8px 14px; border-radius:999px;
+  cursor:pointer; padding:6px 12px; border-radius:888px;
   text-decoration:none; background:#1552FF; color:#FFFFFF !important;
   border:1px solid #1552FF; transition: filter .15s ease, transform .02s ease;
 }
@@ -154,7 +163,7 @@ with col_title:
         "<span class='badge'>People • Process • Platform • Performance</span></div>",
         unsafe_allow_html=True
     )
-    st.caption("**Tagline:** *How ready is your business to extract value from analytics?*")
+    st.markdown("<div class='tagline'>How ready is your business to extract value from analytics?</div>", unsafe_allow_html=True)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
