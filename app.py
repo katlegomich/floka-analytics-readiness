@@ -138,6 +138,17 @@ hr{border-color:#eef2ff;}
 [data-testid="stSlider"] [data-baseweb="slider"] > div > div:nth-child(2) {
   background: linear-gradient(to right, #1552FF, #1552FF) !important;
 }
+
+/* Disable BaseWeb hover overlay on the rail */
+[data-testid="stSlider"] [data-baseweb="slider"]:hover > div:not(:nth-child(2)) {
+  background: #e8ecf6 !important;   /* keep rail light grey on hover */
+}
+/* Ensure progress stays blue on hover/focus */
+[data-testid="stSlider"] [data-baseweb="slider"]:hover > div:nth-child(2),
+[data-testid="stSlider"] [data-baseweb="slider"]:focus-within > div:nth-child(2) {
+  background: #1552FF !important;
+  background-color: #1552FF !important;
+}
 [data-testid="stSlider"] [data-baseweb="slider"] > div > div:nth-child(3),
 [data-testid="stSlider"] [data-baseweb="slider"] > div > div:nth-child(4) {
   background-color:#1552FF !important;
@@ -191,14 +202,12 @@ components.html("""
       const el = parent.document.getElementById(id);
       if(el){ el.scrollIntoView({behavior:'smooth', block:'start'}); }
     }
-    // Click to scroll
     nav.querySelectorAll('.link').forEach(a=>{
       a.addEventListener('click', e=>{
         e.preventDefault();
         scrollToId(a.dataset.target);
       });
     });
-    // Active tab on scroll
     const ids = ['people','process','platform','performance','results'];
     const observer = new IntersectionObserver((entries)=>{
       entries.forEach((en)=>{
@@ -215,33 +224,37 @@ components.html("""
     });
   }
 
-  // ───────── Force slider selected track to FLOKA blue ─────────
+  // ───────── Slider paint: rail = grey, progress = blue; kill hover stripe ─────────
   function paintSliders(){
-    // common track element across BaseWeb builds
-    const tracks = parent.document.querySelectorAll(
-      '[data-testid="stSlider"] [data-baseweb="slider"] div:nth-child(2)'
-    );
-    tracks.forEach(t => {
-      t.style.backgroundColor = '#1552FF';
-      t.style.background = '#1552FF';
-    });
-    // sometimes a nested child carries the gradient
-    const grads = parent.document.querySelectorAll(
-      '[data-testid="stSlider"] [data-baseweb="slider"] div:nth-child(2) div'
-    );
-    grads.forEach(g => {
-      g.style.backgroundColor = '#1552FF';
-      g.style.background = '#1552FF';
+    const sliders = parent.document.querySelectorAll('[data-testid="stSlider"] [data-baseweb="slider"]');
+    sliders.forEach(s => {
+      // BaseWeb structure: div(rail) div(progress) div(thumb) div(thumb)
+      const rail     = s.querySelector(':scope > div:nth-child(1)');
+      const progress = s.querySelector(':scope > div:nth-child(2)');
+
+      if (rail) {
+        rail.style.background   = '#e8ecf6';   // light rail
+        rail.style.backgroundColor = '#e8ecf6';
+      }
+      if (progress) {
+        progress.style.background   = '#1552FF'; // blue progress only
+        progress.style.backgroundColor = '#1552FF';
+      }
+
+      // remove any extra hover overlays some builds add as extra children
+      Array.from(s.children).forEach((ch, idx) => {
+        if (idx > 3) { ch.style.background = 'transparent'; ch.style.backgroundColor = 'transparent'; }
+      });
     });
   }
 
-  // paint now and on any rerender
   const mo = new MutationObserver(paintSliders);
   mo.observe(parent.document.body, {subtree:true, childList:true, attributes:true});
   paintSliders();
 })();
 </script>
 """, height=0)
+
 
 st.markdown(
     "<div class='floka-card'><b>How it works</b><br>"
@@ -495,7 +508,7 @@ if submitted:
             "This stops random acts of analytics and builds organizational muscle for repeatable delivery."
         )
         st.write(
-            "At the same time, make standards easy to adopt. Stand up a cross-functional Data Governance Working Group to own "
+            "At the same time, make standards easy to adopt. Set up a cross-functional Data Governance Committee to own "
             "definitions, naming rules, and access policies. Publish certified metrics and code lists in a simple catalog and add a "
             "light issue log so teams can raise and resolve data problems quickly. When processes are clear, adoption and impact follow."
         )
