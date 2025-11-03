@@ -131,33 +131,17 @@ hr{border-color:#eef2ff;}
 .level-table .range-col { white-space:nowrap; width:130px; }
 .level-table .level-col { width:140px; }
 
-# Force slider active track + thumbs to FLOKA blue
-[data-testid="stSlider"] [data-baseweb="slider"] {
-  color: #1552FF !important;
-}
-[data-testid="stSlider"] [data-baseweb="slider"] > div > div:nth-child(2) {
-  background: linear-gradient(to right, #1552FF, #1552FF) !important;
-}
-
-/* Disable BaseWeb hover overlay on the rail */
-[data-testid="stSlider"] [data-baseweb="slider"]:hover > div:not(:nth-child(2)) {
-  background: #e8ecf6 !important;   /* keep rail light grey on hover */
-}
-/* Ensure progress stays blue on hover/focus */
-[data-testid="stSlider"] [data-baseweb="slider"]:hover > div:nth-child(2),
-[data-testid="stSlider"] [data-baseweb="slider"]:focus-within > div:nth-child(2) {
-  background: #1552FF !important;
-  background-color: #1552FF !important;
-}
-[data-testid="stSlider"] [data-baseweb="slider"] > div > div:nth-child(3),
-[data-testid="stSlider"] [data-baseweb="slider"] > div > div:nth-child(4) {
-  background-color:#1552FF !important;
-  border-color:#1552FF !important;
-}
+/* FLOKA slider colors */
 [data-testid="stSlider"] div[role="slider"] {
   background-color:#1552FF !important;
   border:2px solid #1552FF !important;
   outline:none !important;
+}
+[data-testid="stSlider"] [data-baseweb="slider"] > div:nth-child(1) {
+  background:#e8ecf6 !important;  /* unfilled track */
+}
+[data-testid="stSlider"] [data-baseweb="slider"] > div:nth-child(2) {
+  background:#1552FF !important;  /* filled track */
 }
 </style>
 """, unsafe_allow_html=True)
@@ -224,26 +208,25 @@ components.html("""
     });
   }
 
-  // ───────── Slider paint: rail = grey, progress = blue; kill hover stripe ─────────
+  // ───────── Fix slider colors (left side blue, right side grey) ─────────
   function paintSliders(){
     const sliders = parent.document.querySelectorAll('[data-testid="stSlider"] [data-baseweb="slider"]');
     sliders.forEach(s => {
-      // BaseWeb structure: div(rail) div(progress) div(thumb) div(thumb)
       const rail     = s.querySelector(':scope > div:nth-child(1)');
       const progress = s.querySelector(':scope > div:nth-child(2)');
+      const thumbs   = s.querySelectorAll(':scope > div[role="slider"]');
 
       if (rail) {
-        rail.style.background   = '#e8ecf6';   // light rail
+        rail.style.background = '#e8ecf6';    // right side light grey
         rail.style.backgroundColor = '#e8ecf6';
       }
       if (progress) {
-        progress.style.background   = '#1552FF'; // blue progress only
+        progress.style.background = '#1552FF'; // left side blue
         progress.style.backgroundColor = '#1552FF';
       }
-
-      // remove any extra hover overlays some builds add as extra children
-      Array.from(s.children).forEach((ch, idx) => {
-        if (idx > 3) { ch.style.background = 'transparent'; ch.style.backgroundColor = 'transparent'; }
+      thumbs.forEach(t => {
+        t.style.backgroundColor = '#1552FF';
+        t.style.border = '2px solid #1552FF';
       });
     });
   }
@@ -254,7 +237,6 @@ components.html("""
 })();
 </script>
 """, height=0)
-
 
 st.markdown(
     "<div class='floka-card'><b>How it works</b><br>"
