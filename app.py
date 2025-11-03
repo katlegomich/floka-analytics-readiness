@@ -18,16 +18,13 @@ st.set_page_config(
 # ──────────────────────────────────────────────────────────────────────────────
 def is_admin() -> bool:
     """Show internal-only controls when URL has ?key=<ADMIN_KEY> matching secrets/env."""
-    # Streamlit >=1.32
     key_in_url = ""
     try:
         qp = st.query_params
         key_in_url = qp.get("key", [""])[0] if isinstance(qp.get("key"), list) else qp.get("key", "")
     except Exception:
-        # Fallback for older versions
         qp = st.experimental_get_query_params()
         key_in_url = qp.get("key", [""])[0] if qp.get("key") else ""
-
     expected = st.secrets.get("ADMIN_KEY", os.environ.get("ADMIN_KEY", ""))
     return (expected != "") and (key_in_url == expected)
 
@@ -97,13 +94,12 @@ section.main > div { padding-top: 10px !important; }
 hr{border-color:#eef2ff;}
 
 .tagline{
-  font-size: 22px;     /* bump to 24px if you want even bigger */
+  font-size: 22px;
   font-weight: 600;
   color: #0A1024;
   opacity: .9;
   margin: -2px 0 12px 0;
 }
-
 
 /* Sticky nav */
 #floka-nav {
@@ -131,9 +127,7 @@ hr{border-color:#eef2ff;}
 .level-table .range-col { white-space:nowrap; width:130px; }
 .level-table .level-col { width:140px; }
 
-st.markdown("""
-<style>
-/* ── FLOKA slider colors — final override ───────────────────────────────── */
+/* ===== FLOKA slider colors - final override (ASCII only) ===== */
 
 /* Thumb */
 [data-testid="stSlider"] div[role="slider"]{
@@ -142,21 +136,21 @@ st.markdown("""
   outline:none !important;
 }
 
-/* Unfilled rail (right side) — force light grey and kill any gradients */
+/* Unfilled rail (right side) */
 [data-testid="stSlider"] [data-baseweb="slider"] > div:nth-child(1),
 [data-testid="stSlider"] [data-baseweb="slider"] > div:nth-child(1) *{
   background:#e8ecf6 !important;
   background-image:none !important;
 }
 
-/* Filled rail (left side) — solid FLOKA blue, no gradient */
+/* Filled rail (left side) */
 [data-testid="stSlider"] [data-baseweb="slider"] > div:nth-child(2),
 [data-testid="stSlider"] [data-baseweb="slider"] > div:nth-child(2) *{
   background:#1552FF !important;
   background-image:none !important;
 }
 
-/* Remove the blue hover overlay some BaseWeb builds inject */
+/* Remove hover overlay */
 [data-testid="stSlider"] [data-baseweb="slider"]:hover > div:not(:nth-child(2)),
 [data-testid="stSlider"] [data-baseweb="slider"]:focus-within > div:not(:nth-child(2)){
   background:#e8ecf6 !important;
@@ -179,7 +173,6 @@ with col_title:
     )
     st.markdown("<div class='tagline'>How ready is your business to extract value from analytics?</div>", unsafe_allow_html=True)
 
-
 # ──────────────────────────────────────────────────────────────────────────────
 # STICKY NAV (click to jump + active on scroll)
 # ──────────────────────────────────────────────────────────────────────────────
@@ -198,7 +191,7 @@ st.markdown("""
 components.html("""
 <script>
 (function(){
-  // ───────── Sticky nav (unchanged) ─────────
+  // Sticky nav
   const nav = parent.document.querySelector('#floka-nav');
   if(nav){
     function scrollToId(id){
@@ -226,33 +219,6 @@ components.html("""
       if(el) observer.observe(el);
     });
   }
-
-  // ───────── Fix slider colors (left side blue, right side grey) ─────────
-  function paintSliders(){
-    const sliders = parent.document.querySelectorAll('[data-testid="stSlider"] [data-baseweb="slider"]');
-    sliders.forEach(s => {
-      const rail     = s.querySelector(':scope > div:nth-child(1)');
-      const progress = s.querySelector(':scope > div:nth-child(2)');
-      const thumbs   = s.querySelectorAll(':scope > div[role="slider"]');
-
-      if (rail) {
-        rail.style.background = '#e8ecf6';    // right side light grey
-        rail.style.backgroundColor = '#e8ecf6';
-      }
-      if (progress) {
-        progress.style.background = '#1552FF'; // left side blue
-        progress.style.backgroundColor = '#1552FF';
-      }
-      thumbs.forEach(t => {
-        t.style.backgroundColor = '#1552FF';
-        t.style.border = '2px solid #1552FF';
-      });
-    });
-  }
-
-  const mo = new MutationObserver(paintSliders);
-  mo.observe(parent.document.body, {subtree:true, childList:true, attributes:true});
-  paintSliders();
 })();
 </script>
 """, height=0)
@@ -300,6 +266,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 # ──────────────────────────────────────────────────────────────────────────────
 # FORM
 # ──────────────────────────────────────────────────────────────────────────────
@@ -389,7 +356,6 @@ def levels_table_html():
 # RESULTS
 # ──────────────────────────────────────────────────────────────────────────────
 if submitted:
-    # Validate contact details first
     if not valid_email(email):
         st.error("Please enter a valid work email.")
         st.stop()
@@ -406,7 +372,6 @@ if submitted:
     level = maturity_label(overall)
     desc  = maturity_desc(level)
 
-    # Save lead to CSV
     row = [
         datetime.datetime.utcnow().isoformat(),
         email.strip(),
@@ -438,7 +403,6 @@ if submitted:
     c4.metric("Platform & Technology", f"{platform:.2f}")
     c5.metric("Performance & Value", f"{performance:.2f}")
 
-    # Blue radar chart with all 4 labels
     cats_full  = ["People & Leadership","Process & Governance","Platform & Technology","Performance & Value"]
     cats_short = ["People","Process","Platform","Performance"]
     values = [people, process, platform, performance]
@@ -469,14 +433,12 @@ if submitted:
         )
     )
 
-    # LEFT—RIGHT layout: radar left, levels table right
     left, right = st.columns([7,5], vertical_alignment="top")
     with left:
         st.plotly_chart(radar, use_container_width=True)
     with right:
         st.markdown(levels_table_html(), unsafe_allow_html=True)
 
-    # Elaborated personalized recommendations
     st.markdown("### Personalized Recommendations")
     pillar_scores = {
         "People & Leadership": people,
@@ -526,7 +488,7 @@ if submitted:
             "then evolve to lineage and policy checks. A small set of engineering conventions will remove most platform bottlenecks."
         )
 
-    else:  # Performance & Value
+    else:
         st.write(
             "Tie analytics work to economic outcomes and track adoption explicitly. For each initiative, agree a value formula "
             "(cost avoided, revenue generated, time saved) and a baseline; publish monthly actuals in the same place stakeholders "
@@ -539,7 +501,6 @@ if submitted:
             "this builds confidence, unlocks further funding, and shifts analytics from reporting to results."
         )
 
-    # Internal-only: Download leads (CSV)
     if is_admin() and os.path.exists(CSV_PATH):
         with open(CSV_PATH, "rb") as f:
             st.download_button(
