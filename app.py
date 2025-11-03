@@ -203,8 +203,12 @@ st.markdown(
     "<div class='floka-card'><b>How it works</b><br>"
     "Rate each statement from <b>1 (Strongly Disagree)</b> to <b>5 (Strongly Agree)</b>. "
     "You will instantly see your maturity level, a radar chart by pillar, and tailored recommendations."
-    "</div>", unsafe_allow_html=True
+    "<br><br><b>Rating guide</b>"  # title
+    f"{RATING_GUIDE}"              # the only place we show it
+    "</div>",
+    unsafe_allow_html=True
 )
+
 
 # -----------------------------------------------------------------------------
 # QUESTIONS
@@ -296,7 +300,7 @@ def render_section(section_id: str, title: str, idx_range: range, key_prefix: st
 
     with right:
         st.markdown(DEFINITIONS[title], unsafe_allow_html=True)
-        st.markdown(RATING_GUIDE, unsafe_allow_html=True)
+       
 
     return answers
 
