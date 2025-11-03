@@ -52,6 +52,17 @@ def append_to_csv(row: list, path=CSV_PATH):
             w.writerow(header)
         w.writerow(row)
 
+# --- Rating guide HTML (used once in "How it works") ---
+RATING_GUIDE = """
+<ul style="margin:6px 0 0 18px;">
+  <li><b>1 — Strongly Disagree:</b> practice largely absent or ad hoc</li>
+  <li><b>2 — Disagree:</b> some activity but inconsistent and fragile</li>
+  <li><b>3 — Neutral:</b> partially in place; varies by team</li>
+  <li><b>4 — Agree:</b> established and repeatable in most areas</li>
+  <li><b>5 — Strongly Agree:</b> optimized, measured, and continuously improved</li>
+</ul>
+"""
+
 # -----------------------------------------------------------------------------
 # THEME & CSS
 # -----------------------------------------------------------------------------
