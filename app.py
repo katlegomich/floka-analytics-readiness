@@ -131,17 +131,36 @@ hr{border-color:#eef2ff;}
 .level-table .range-col { white-space:nowrap; width:130px; }
 .level-table .level-col { width:140px; }
 
-/* FLOKA slider colors */
-[data-testid="stSlider"] div[role="slider"] {
+st.markdown("""
+<style>
+/* ── FLOKA slider colors — final override ───────────────────────────────── */
+
+/* Thumb */
+[data-testid="stSlider"] div[role="slider"]{
   background-color:#1552FF !important;
   border:2px solid #1552FF !important;
   outline:none !important;
 }
-[data-testid="stSlider"] [data-baseweb="slider"] > div:nth-child(1) {
-  background:#e8ecf6 !important;  /* unfilled track */
+
+/* Unfilled rail (right side) — force light grey and kill any gradients */
+[data-testid="stSlider"] [data-baseweb="slider"] > div:nth-child(1),
+[data-testid="stSlider"] [data-baseweb="slider"] > div:nth-child(1) *{
+  background:#e8ecf6 !important;
+  background-image:none !important;
 }
-[data-testid="stSlider"] [data-baseweb="slider"] > div:nth-child(2) {
-  background:#1552FF !important;  /* filled track */
+
+/* Filled rail (left side) — solid FLOKA blue, no gradient */
+[data-testid="stSlider"] [data-baseweb="slider"] > div:nth-child(2),
+[data-testid="stSlider"] [data-baseweb="slider"] > div:nth-child(2) *{
+  background:#1552FF !important;
+  background-image:none !important;
+}
+
+/* Remove the blue hover overlay some BaseWeb builds inject */
+[data-testid="stSlider"] [data-baseweb="slider"]:hover > div:not(:nth-child(2)),
+[data-testid="stSlider"] [data-baseweb="slider"]:focus-within > div:not(:nth-child(2)){
+  background:#e8ecf6 !important;
+  background-image:none !important;
 }
 </style>
 """, unsafe_allow_html=True)
