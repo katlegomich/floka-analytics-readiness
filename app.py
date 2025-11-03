@@ -4,18 +4,18 @@ import plotly.graph_objs as go
 import streamlit.components.v1 as components
 import re, csv, os, datetime
 
-# ──────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # PAGE CONFIG
-# ──────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="FLOKA • Analytics Readiness Diagnostic",
     page_icon="floka_logo.png",
     layout="wide"
 )
 
-# ──────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # GLOBAL HELPERS
-# ──────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 def is_admin() -> bool:
     """Show internal-only controls when URL has ?key=<ADMIN_KEY> matching secrets/env."""
     key_in_url = ""
@@ -52,9 +52,9 @@ def append_to_csv(row: list, path=CSV_PATH):
             w.writerow(header)
         w.writerow(row)
 
-# ──────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # THEME & CSS
-# ──────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 st.markdown("""
 <style>
 :root {
@@ -127,41 +127,18 @@ hr{border-color:#eef2ff;}
 .level-table .range-col { white-space:nowrap; width:130px; }
 .level-table .level-col { width:140px; }
 
-/* ===== FLOKA slider colors - final override (ASCII only) ===== */
-
-/* Thumb */
-[data-testid="stSlider"] div[role="slider"]{
-  background-color:#1552FF !important;
-  border:2px solid #1552FF !important;
-  outline:none !important;
-}
-
-/* Unfilled rail (right side) */
-[data-testid="stSlider"] [data-baseweb="slider"] > div:nth-child(1),
-[data-testid="stSlider"] [data-baseweb="slider"] > div:nth-child(1) *{
-  background:#e8ecf6 !important;
-  background-image:none !important;
-}
-
-/* Filled rail (left side) */
-[data-testid="stSlider"] [data-baseweb="slider"] > div:nth-child(2),
-[data-testid="stSlider"] [data-baseweb="slider"] > div:nth-child(2) *{
-  background:#1552FF !important;
-  background-image:none !important;
-}
-
-/* Remove hover overlay */
-[data-testid="stSlider"] [data-baseweb="slider"]:hover > div:not(:nth-child(2)),
-[data-testid="stSlider"] [data-baseweb="slider"]:focus-within > div:not(:nth-child(2)){
-  background:#e8ecf6 !important;
-  background-image:none !important;
+/* Likert radios: present options inline and tidy spacing */
+[data-testid="stRadio"] > label { font-weight: 500; }
+[data-testid="stRadio"] > div { flex-wrap: wrap; gap: .6rem 1rem; }
+@media (min-width: 900px){
+  [data-testid="stRadio"] > div { flex-wrap: nowrap; }
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ──────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # LOGO + TITLE
-# ──────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 col_logo, col_title = st.columns([1,5], vertical_alignment="center")
 with col_logo:
     st.image("floka_logo.png", width=120)
@@ -173,9 +150,9 @@ with col_title:
     )
     st.markdown("<div class='tagline'>How ready is your business to extract value from analytics?</div>", unsafe_allow_html=True)
 
-# ──────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # STICKY NAV (click to jump + active on scroll)
-# ──────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 st.markdown("""
 <div id="floka-nav">
   <div class="floka-wrap">
@@ -191,7 +168,6 @@ st.markdown("""
 components.html("""
 <script>
 (function(){
-  // Sticky nav
   const nav = parent.document.querySelector('#floka-nav');
   if(nav){
     function scrollToId(id){
@@ -226,13 +202,13 @@ components.html("""
 st.markdown(
     "<div class='floka-card'><b>How it works</b><br>"
     "Rate each statement from <b>1 (Strongly Disagree)</b> to <b>5 (Strongly Agree)</b>. "
-    "You’ll instantly see your maturity level, a radar chart by pillar, and tailored recommendations."
+    "You will instantly see your maturity level, a radar chart by pillar, and tailored recommendations."
     "</div>", unsafe_allow_html=True
 )
 
-# ──────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # QUESTIONS
-# ──────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 questions = [
     # People & Leadership
     ("People & Leadership", "Leadership shares a clear vision for how analytics creates business value."),
@@ -252,46 +228,63 @@ questions = [
     ("Performance & Value", "We track and refine models, metrics, and dashboards to keep them relevant.")
 ]
 
-st.markdown(
-    """
-    <div class="floka-card">
-      <h4 style="margin:0 0 8px 0;">What do the four pillars cover?</h4>
-      <ul style="margin:0 0 0 1.2rem;">
-        <li><b>People &amp; Leadership</b> — vision, culture, capability.</li>
-        <li><b>Process &amp; Governance</b> — prioritization, standards, scale/learn rhythm.</li>
-        <li><b>Platform &amp; Technology</b> — integrated data, automation, compliance.</li>
-        <li><b>Performance &amp; Value</b> — adoption, ROI, continuous improvement.</li>
-      </ul>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+# -----------------------------------------------------------------------------
+# FORM (LIKERT RADIO BUTTONS)
+# -----------------------------------------------------------------------------
+likert_options = [
+    "1 - Strongly Disagree",
+    "2 - Disagree",
+    "3 - Neutral",
+    "4 - Agree",
+    "5 - Strongly Agree"
+]
 
-# ──────────────────────────────────────────────────────────────────────────────
-# FORM
-# ──────────────────────────────────────────────────────────────────────────────
 with st.form("quiz"):
     scores = []
 
     st.markdown("<div id='people'></div>", unsafe_allow_html=True)
     st.subheader("🔹 People & Leadership")
-    for i in range(0,3):
-        scores.append(st.slider(f"{questions[i][1]}", 1, 5, 3, help="1 = Strongly Disagree • 5 = Strongly Agree"))
+    for i in range(0, 3):
+        choice = st.radio(
+            questions[i][1],
+            options=likert_options,
+            key=f"people_{i}",
+            horizontal=True
+        )
+        scores.append(int(choice.split(" - ")[0]))
 
     st.markdown("<div id='process'></div>", unsafe_allow_html=True)
     st.subheader("🔹 Process & Governance")
-    for i in range(3,6):
-        scores.append(st.slider(f"{questions[i][1]}", 1, 5, 3))
+    for i in range(3, 6):
+        choice = st.radio(
+            questions[i][1],
+            options=likert_options,
+            key=f"process_{i}",
+            horizontal=True
+        )
+        scores.append(int(choice.split(" - ")[0]))
 
     st.markdown("<div id='platform'></div>", unsafe_allow_html=True)
     st.subheader("🔹 Platform & Technology")
-    for i in range(6,9):
-        scores.append(st.slider(f"{questions[i][1]}", 1, 5, 3))
+    for i in range(6, 9):
+        choice = st.radio(
+            questions[i][1],
+            options=likert_options,
+            key=f"platform_{i}",
+            horizontal=True
+        )
+        scores.append(int(choice.split(" - ")[0]))
 
     st.markdown("<div id='performance'></div>", unsafe_allow_html=True)
     st.subheader("🔹 Performance & Value")
-    for i in range(9,12):
-        scores.append(st.slider(f"{questions[i][1]}", 1, 5, 3))
+    for i in range(9, 12):
+        choice = st.radio(
+            questions[i][1],
+            options=likert_options,
+            key=f"performance_{i}",
+            horizontal=True
+        )
+        scores.append(int(choice.split(" - ")[0]))
 
     st.markdown("---")
     st.subheader("Contact (to send you a debrief)")
@@ -301,14 +294,14 @@ with st.form("quiz"):
     with right_c:
         mobile = st.text_input("Mobile (required)", placeholder="+27 82 123 4567")
 
-    bottleneck = st.text_input("Optional: What’s your biggest analytics challenge right now?")
+    bottleneck = st.text_input("Optional: What is your biggest analytics challenge right now?")
     st.caption("We only use your details to follow up on your results. No spam, no sharing.")
 
     submitted = st.form_submit_button("See My Results")
 
-# ──────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # MATURITY MODEL
-# ──────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 LEVELS = [
     ("Emerging",      (1.00, 2.00), "Analytics efforts are ad hoc, siloed, and largely reactive. Data lives in spreadsheets."),
     ("Developing",    (2.01, 3.20), "Some structure exists, but inconsistent data and unclear ownership limit value."),
@@ -352,9 +345,9 @@ def levels_table_html():
     footer = "</tbody></table></div>"
     return header + "".join(rows) + footer
 
-# ──────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # RESULTS
-# ──────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 if submitted:
     if not valid_email(email):
         st.error("Please enter a valid work email.")
@@ -467,7 +460,7 @@ if submitted:
         st.write(
             "Introduce a lightweight governance rhythm that connects ideas to measurable value. Maintain a single backlog and rank "
             "items on value vs. effort; pick 1–2 initiatives per quarter with named owners, baselines, and 6–8-week targets. "
-            "Formalize a stage-gate from discovery → pilot → scale, and require a short, written hypothesis before work starts. "
+            "Formalize a stage-gate from discovery -> pilot -> scale, and require a short, written hypothesis before work starts. "
             "This stops random acts of analytics and builds organizational muscle for repeatable delivery."
         )
         st.write(
@@ -492,12 +485,12 @@ if submitted:
         st.write(
             "Tie analytics work to economic outcomes and track adoption explicitly. For each initiative, agree a value formula "
             "(cost avoided, revenue generated, time saved) and a baseline; publish monthly actuals in the same place stakeholders "
-            "already watch performance. Add a simple ‘who acts, by when, and what happened’ panel to priority dashboards so the "
+            "already watch performance. Add a simple 'who acts, by when, and what happened' panel to priority dashboards so the "
             "insight-to-action chain is visible and accountable."
         )
         st.write(
-            "Close the loop with continuous improvement. Run quarterly reviews of models, metrics, and dashboards—retire what’s stale, "
-            "refine what’s used, and A/B test changes where feasible. Share short win stories that link action to outcome; over time "
+            "Close the loop with continuous improvement. Run quarterly reviews of models, metrics, and dashboards—retire what is stale, "
+            "refine what is used, and A/B test changes where feasible. Share short win stories that link action to outcome; over time "
             "this builds confidence, unlocks further funding, and shifts analytics from reporting to results."
         )
 
@@ -510,7 +503,8 @@ if submitted:
                 mime="text/csv"
             )
 
-# ──────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 # FOOTER
-# ──────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 st.markdown("<div class='footer'>© 2025 FLOKA Solutions • Analytics Readiness Diagnostic</div>", unsafe_allow_html=True)
+
