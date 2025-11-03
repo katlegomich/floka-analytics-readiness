@@ -9,12 +9,54 @@ import re, csv, os, datetime
 # ──────────────────────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="FLOKA • Analytics Readiness Diagnostic",
-    page_icon="floka_logo.png",  # use your logo file
+    page_icon="floka_logo.png",
     layout="wide"
 )
 
 # ──────────────────────────────────────────────────────────────────────────────
-# THEME CSS (blue/white + nicer widgets)
+# GLOBAL HELPERS
+# ──────────────────────────────────────────────────────────────────────────────
+def is_admin() -> bool:
+    """Show internal-only controls when URL has ?key=<ADMIN_KEY> matching secrets/env."""
+    # Streamlit >=1.32
+    key_in_url = ""
+    try:
+        qp = st.query_params
+        key_in_url = qp.get("key", [""])[0] if isinstance(qp.get("key"), list) else qp.get("key", "")
+    except Exception:
+        # Fallback for older versions
+        qp = st.experimental_get_query_params()
+        key_in_url = qp.get("key", [""])[0] if qp.get("key") else ""
+
+    expected = st.secrets.get("ADMIN_KEY", os.environ.get("ADMIN_KEY", ""))
+    return (expected != "") and (key_in_url == expected)
+
+EMAIL_RE = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
+PHONE_RE = re.compile(r"^[0-9+()\-\s]{7,}$")  # simple; allows +, spaces, dashes, brackets
+CSV_PATH = "responses.csv"
+
+def valid_email(s: str) -> bool:
+    return bool(EMAIL_RE.match((s or "").strip()))
+
+def valid_phone(s: str) -> bool:
+    return bool(PHONE_RE.match((s or "").strip()))
+
+def append_to_csv(row: list, path=CSV_PATH):
+    header = [
+        "timestamp_utc","email","mobile",
+        "overall","level",
+        "people","process","platform","performance",
+        "bottleneck"
+    ]
+    file_exists = os.path.exists(path)
+    with open(path, "a", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        if not file_exists:
+            w.writerow(header)
+        w.writerow(row)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# THEME & CSS
 # ──────────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -61,26 +103,32 @@ hr{border-color:#eef2ff;}
   padding: 10px 4px; margin: -8px -8px 12px -8px;
 }
 #floka-nav .floka-wrap {max-width: 1200px; margin: 0 auto; display:flex; gap:10px; flex-wrap:wrap;}
-#floka-nav .link {
-  cursor:pointer; padding:6px 12px; border-radius:999px;
-  color:#0A1024; text-decoration:none; border:1px solid transparent;
-}
-#floka-nav .link:hover { background:#E7EEFF; color:#1552FF; border-color:#cfe0ff; }
-#floka-nav .link.active { background:#1552FF; color:#fff; border-color:#1552FF; }
 
-/* Right-side maturity table styles */
+/* Solid blue pills for ALL tabs */
+#floka-nav .link {
+  cursor:pointer; padding:8px 14px; border-radius:999px;
+  text-decoration:none; background:#1552FF; color:#FFFFFF !important;
+  border:1px solid #1552FF; transition: filter .15s ease, transform .02s ease;
+}
+#floka-nav .link:hover, #floka-nav .link:focus { filter:brightness(0.95); }
+#floka-nav .link.active { box-shadow: 0 0 0 3px rgba(21,82,255,.18); }
+
+/* Maturity table styles (blue header, no-wrap Range) */
 .level-card { background:#F5F7FF; border:1px solid #e6ecff; border-radius:14px; padding:14px; }
 .level-table { width:100%; border-collapse:separate; border-spacing:0; border:1px solid #e6ecff; border-radius:10px; overflow:hidden; }
+.level-table thead th { background:#1552FF; color:#FFFFFF; text-align:left; }
 .level-table th, .level-table td { padding:10px 12px; border-bottom:1px solid #eef2ff; vertical-align:top; }
-.level-table th { background:#F5F7FF; text-align:left; }
 .level-table tr:last-child td { border-bottom:0; }
+.level-table .range-col { white-space:nowrap; width:130px; }
+.level-table .level-col { width:140px; }
 
-/* Force slider active track + knob to FLOKA blue (in case theme file isn't picked up) */
-div[data-baseweb="slider"] > div > div:nth-child(2) { background-color:#1552FF !important; }
-div[data-baseweb="slider"] > div > div:nth-child(3),
-div[data-baseweb="slider"] > div > div:nth-child(4) {
+/* Force slider active track + thumbs to FLOKA blue */
+[data-testid="stSlider"] [data-baseweb="slider"] > div > div:nth-child(2) { background-color:#1552FF !important; }
+[data-testid="stSlider"] [data-baseweb="slider"] > div > div:nth-child(3),
+[data-testid="stSlider"] [data-baseweb="slider"] > div > div:nth-child(4) {
   background-color:#1552FF !important; border-color:#1552FF !important;
 }
+[data-testid="stSlider"] div[role="slider"] { outline-color:#1552FF !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -181,48 +229,26 @@ questions = [
     ("Performance & Value", "We track and refine models, metrics, and dashboards to keep them relevant.")
 ]
 
-with st.expander("What do the four pillars cover? (tap to expand)"):
-    st.markdown("""
-- **People & Leadership** — vision, culture, capability.
-- **Process & Governance** — prioritization, standards, scale/learn rhythm.
-- **Platform & Technology** — integrated data, automation, compliance.
-- **Performance & Value** — adoption, ROI, continuous improvement.
-""")
-
-# ──────────────────────────────────────────────────────────────────────────────
-# VALIDATION & STORAGE HELPERS
-# ──────────────────────────────────────────────────────────────────────────────
-EMAIL_RE = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
-PHONE_RE = re.compile(r"^[0-9+()\-\s]{7,}$")  # simple: digits, +, (), -, spaces; min length 7
-CSV_PATH = "responses.csv"
-
-def valid_email(s: str) -> bool:
-    return bool(EMAIL_RE.match((s or "").strip()))
-
-def valid_phone(s: str) -> bool:
-    return bool(PHONE_RE.match((s or "").strip()))
-
-def append_to_csv(row: list, path=CSV_PATH):
-    header = [
-        "timestamp_utc","email","mobile",
-        "overall","level",
-        "people","process","platform","performance",
-        "bottleneck"
-    ]
-    file_exists = os.path.exists(path)
-    with open(path, "a", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
-        if not file_exists:
-            w.writerow(header)
-        w.writerow(row)
-
+st.markdown(
+    """
+    <div class="floka-card">
+      <h4 style="margin:0 0 8px 0;">What do the four pillars cover?</h4>
+      <ul style="margin:0 0 0 1.2rem;">
+        <li><b>People &amp; Leadership</b> — vision, culture, capability.</li>
+        <li><b>Process &amp; Governance</b> — prioritization, standards, scale/learn rhythm.</li>
+        <li><b>Platform &amp; Technology</b> — integrated data, automation, compliance.</li>
+        <li><b>Performance &amp; Value</b> — adoption, ROI, continuous improvement.</li>
+      </ul>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 # ──────────────────────────────────────────────────────────────────────────────
 # FORM
 # ──────────────────────────────────────────────────────────────────────────────
 with st.form("quiz"):
     scores = []
 
-    # Anchors + sections
     st.markdown("<div id='people'></div>", unsafe_allow_html=True)
     st.subheader("🔹 People & Leadership")
     for i in range(0,3):
@@ -282,16 +308,22 @@ def levels_table_html():
       <h4 style="margin:0 0 8px 0;">What do the maturity levels mean?</h4>
       <table class="level-table">
         <thead>
-          <tr><th style="width:90px;">Range</th><th style="width:140px;">Level</th><th>Description</th></tr>
+          <tr>
+            <th class="range-col">Range</th>
+            <th class="level-col">Level</th>
+            <th>Description</th>
+          </tr>
         </thead>
         <tbody>
     """
     rows = []
     for name, (lo, hi), desc in LEVELS:
         rows.append(
-            f"<tr><td>{lo:.2f} – {hi:.2f}</td>"
-            f"<td><b>{name}</b></td>"
-            f"<td>{desc}</td></tr>"
+            f"<tr>"
+            f"<td class='range-col'>{lo:.2f} – {hi:.2f}</td>"
+            f"<td class='level-col'><b>{name}</b></td>"
+            f"<td>{desc}</td>"
+            f"</tr>"
         )
     footer = "</tbody></table></div>"
     return header + "".join(rows) + footer
@@ -349,20 +381,35 @@ if submitted:
     c4.metric("Platform & Technology", f"{platform:.2f}")
     c5.metric("Performance & Value", f"{performance:.2f}")
 
-    # Blue radar chart
-    radar = go.Figure(data=go.Scatterpolar(
-        r=[people, process, platform, performance, people],
-        theta=["People","Process","Platform","Performance","People"],
+    # Blue radar chart with all 4 labels
+    cats_full  = ["People & Leadership","Process & Governance","Platform & Technology","Performance & Value"]
+    cats_short = ["People","Process","Platform","Performance"]
+    values = [people, process, platform, performance]
+
+    radar = go.Figure()
+    radar.add_trace(go.Scatterpolar(
+        r = values + [values[0]],
+        theta = cats_full + [cats_full[0]],
         fill='toself',
         fillcolor="rgba(21,82,255,0.20)",
         line=dict(color="#1552FF", width=3),
+        hovertemplate = "%{theta}: <b>%{r:.2f}</b><extra></extra>",
         name="Maturity"
     ))
     radar.update_layout(
-        polar=dict(radialaxis=dict(visible=True, range=[1,5])),
         showlegend=False,
         margin=dict(l=10,r=10,t=10,b=10),
-        height=420
+        height=420,
+        polar=dict(
+            radialaxis=dict(visible=True, range=[1,5], tick0=1, dtick=0.5),
+            angularaxis=dict(
+                direction="clockwise",
+                rotation=90,
+                tickmode="array",
+                tickvals=cats_full,
+                ticktext=cats_short
+            )
+        )
     )
 
     # LEFT—RIGHT layout: radar left, levels table right
@@ -372,7 +419,7 @@ if submitted:
     with right:
         st.markdown(levels_table_html(), unsafe_allow_html=True)
 
-    # Recommendations (kept concise)
+    # Elaborated personalized recommendations
     st.markdown("### 🎯 Personalized Recommendations")
     pillar_scores = {
         "People & Leadership": people,
@@ -384,20 +431,59 @@ if submitted:
     st.markdown(f"**Primary Focus Area:** `{weakest}`")
 
     if weakest == "People & Leadership":
-        st.write("- Embed analytics outcomes in leadership KPIs and business scorecards.")
-        st.write("- Launch a company-wide data literacy & storytelling program.")
-    elif weakest == "Process & Governance":
-        st.write("- Establish a cross-functional **Data Governance Working Group** with clear ownership and standards.")
-        st.write("- Use a repeatable **pilot → scale → measure** framework for initiatives.")
-    elif weakest == "Platform & Technology":
-        st.write("- Stand up a unified data catalog with lineage and access control.")
-        st.write("- Modernize integration (APIs/lakehouse/Fabric-style) and automate quality checks.")
-    else:
-        st.write("- Define and track a standard ROI method (cost, revenue, efficiency) per project.")
-        st.write("- Publish win stories and adoption metrics to sustain sponsorship.")
+        st.write(
+            "Start by making analytics value explicit in leadership routines. Draft a 12-month analytics vision that names three "
+            "business outcomes (for example: throughput uplift, working-capital release, or customer NPS). Translate that vision "
+            "into two or three OKRs owned by executives and publish them on the same page as financial and operational scorecards. "
+            "When leaders see the analytics targets alongside P&L drivers, sponsorship and resource allocation become predictable."
+        )
+        st.write(
+            "In parallel, lift frontline capability so teams can self-serve insight. Run a four-week data-literacy sprint focused "
+            "on interpreting charts, challenging assumptions with data, and telling a short story with evidence. Pair each function "
+            "with an analytics partner for one use case and close the loop in monthly ‘Decisions from Data’ sessions—review the "
+            "decision, the evidence used, and the outcome. This creates a visible culture shift without heavy tooling changes."
+        )
 
-    # Download leads (CSV)
-    if os.path.exists(CSV_PATH):
+    elif weakest == "Process & Governance":
+        st.write(
+            "Introduce a lightweight governance rhythm that connects ideas to measurable value. Maintain a single backlog and rank "
+            "items on value vs. effort; pick 1–2 initiatives per quarter with named owners, baselines, and 6–8-week targets. "
+            "Formalize a stage-gate from discovery → pilot → scale, and require a short, written hypothesis before work starts. "
+            "This stops random acts of analytics and builds organizational muscle for repeatable delivery."
+        )
+        st.write(
+            "At the same time, make standards easy to adopt. Stand up a cross-functional Data Governance Working Group to own "
+            "definitions, naming rules, and access policies. Publish certified metrics and code lists in a simple catalog and add a "
+            "light issue log so teams can raise and resolve data problems quickly. When processes are clear, adoption and impact follow."
+        )
+
+    elif weakest == "Platform & Technology":
+        st.write(
+            "Stabilize the foundation by creating one governed source of truth for a core domain (e.g., customers, assets, or orders). "
+            "Expose it through a semantic model so BI, analytics, and apps all reference the same logic. Automate ingest-transform-publish "
+            "with basic monitoring and alerts; the goal is trustworthy, low-friction data rather than a big-bang platform rebuild."
+        )
+        st.write(
+            "Layer in pragmatic engineering practices that accelerate delivery. Template reusable pipelines, keep transformations under "
+            "version control, and enable simple CI/CD for analytics code. Add role-based access and minimum viable PII handling first, "
+            "then evolve to lineage and policy checks. A small set of engineering conventions will remove most platform bottlenecks."
+        )
+
+    else:  # Performance & Value
+        st.write(
+            "Tie analytics work to economic outcomes and track adoption explicitly. For each initiative, agree a value formula "
+            "(cost avoided, revenue generated, time saved) and a baseline; publish monthly actuals in the same place stakeholders "
+            "already watch performance. Add a simple ‘who acts, by when, and what happened’ panel to priority dashboards so the "
+            "insight-to-action chain is visible and accountable."
+        )
+        st.write(
+            "Close the loop with continuous improvement. Run quarterly reviews of models, metrics, and dashboards—retire what’s stale, "
+            "refine what’s used, and A/B test changes where feasible. Share short win stories that link action to outcome; over time "
+            "this builds confidence, unlocks further funding, and shifts analytics from reporting to results."
+        )
+
+    # Internal-only: Download leads (CSV)
+    if is_admin() and os.path.exists(CSV_PATH):
         with open(CSV_PATH, "rb") as f:
             st.download_button(
                 label="⬇️ Download leads (CSV)",
