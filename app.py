@@ -122,13 +122,23 @@ hr{border-color:#eef2ff;}
 .level-table .range-col { white-space:nowrap; width:130px; }
 .level-table .level-col { width:140px; }
 
-/* Force slider active track + thumbs to FLOKA blue */
-[data-testid="stSlider"] [data-baseweb="slider"] > div > div:nth-child(2) { background-color:#1552FF !important; }
+# Force slider active track + thumbs to FLOKA blue
+[data-testid="stSlider"] [data-baseweb="slider"] {
+  color: #1552FF !important;
+}
+[data-testid="stSlider"] [data-baseweb="slider"] > div > div:nth-child(2) {
+  background: linear-gradient(to right, #1552FF, #1552FF) !important;
+}
 [data-testid="stSlider"] [data-baseweb="slider"] > div > div:nth-child(3),
 [data-testid="stSlider"] [data-baseweb="slider"] > div > div:nth-child(4) {
-  background-color:#1552FF !important; border-color:#1552FF !important;
+  background-color:#1552FF !important;
+  border-color:#1552FF !important;
 }
-[data-testid="stSlider"] div[role="slider"] { outline-color:#1552FF !important; }
+[data-testid="stSlider"] div[role="slider"] {
+  background-color:#1552FF !important;
+  border:2px solid #1552FF !important;
+  outline:none !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -137,14 +147,14 @@ hr{border-color:#eef2ff;}
 # ──────────────────────────────────────────────────────────────────────────────
 col_logo, col_title = st.columns([1,5], vertical_alignment="center")
 with col_logo:
-    st.image("floka_logo.png", width=90)
+    st.image("floka_logo.png", width=120)
 with col_title:
     st.markdown(
         "<div class='header-wrap'><h1>Analytics Readiness Diagnostic</h1>"
         "<span class='badge'>People • Process • Platform • Performance</span></div>",
         unsafe_allow_html=True
     )
-    st.caption("**Tagline:** *How ready is your business to extract value from analytics?*")
+    st.caption("*## How ready is your business to extract value from analytics?*")
 
 # ──────────────────────────────────────────────────────────────────────────────
 # STICKY NAV (click to jump + active on scroll)
@@ -280,7 +290,7 @@ with st.form("quiz"):
     bottleneck = st.text_input("Optional: What’s your biggest analytics challenge right now?")
     st.caption("We only use your details to follow up on your results. No spam, no sharing.")
 
-    submitted = st.form_submit_button("See My Results 🚀")
+    submitted = st.form_submit_button("See My Results")
 
 # ──────────────────────────────────────────────────────────────────────────────
 # MATURITY MODEL
@@ -366,7 +376,7 @@ if submitted:
 
     st.markdown("<div id='results'></div>", unsafe_allow_html=True)
     st.markdown("---")
-    st.markdown("## 🧭 Results Summary")
+    st.markdown("## Results Summary")
 
     st.markdown(
         f"<div class='floka-card'><b>Maturity Level:</b> <span class='badge'>{level}</span>"
@@ -420,7 +430,7 @@ if submitted:
         st.markdown(levels_table_html(), unsafe_allow_html=True)
 
     # Elaborated personalized recommendations
-    st.markdown("### 🎯 Personalized Recommendations")
+    st.markdown("### Personalized Recommendations")
     pillar_scores = {
         "People & Leadership": people,
         "Process & Governance": process,
