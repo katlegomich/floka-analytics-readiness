@@ -248,22 +248,22 @@ questions = [
 # Pillar definition cards (right column)
 DEFINITIONS = {
     "People & Leadership": (
-        "<div class='floka-card'><b>What this pillar covers</b><br>"
+        "<div class='floka-card'><b>What the People & Leadership pillar covers</b><br>"
         "Vision and sponsorship, culture and behaviors, and the capability to work with data across functions. "
         "Leaders make value explicit and set the rhythm for evidence-based decisions.</div>"
     ),
     "Process & Governance": (
-        "<div class='floka-card'><b>What this pillar covers</b><br>"
+        "<div class='floka-card'><b>What the Process & Governance pillar covers</b><br>"
         "How ideas become outcomes: prioritization, standards, ownership, risk & compliance, and a scale/learn rhythm. "
         "Clear processes reduce rework and increase the hit-rate of analytics initiatives.</div>"
     ),
     "Platform & Technology": (
-        "<div class='floka-card'><b>What this pillar covers</b><br>"
+        "<div class='floka-card'><b>What the Platform & Technology pillar covers</b><br>"
         "The data foundation: integration, automation, security and reliability. "
         "A governed source of truth and basic engineering practices enable speed with trust.</div>"
     ),
     "Performance & Value": (
-        "<div class='floka-card'><b>What this pillar covers</b><br>"
+        "<div class='floka-card'><b>What the Performance & Value pillar covers</b><br>"
         "Adoption, measurable business impact, and continuous improvement. "
         "Track who acts on insights, the results achieved, and retire or refine what is not used.</div>"
     ),
