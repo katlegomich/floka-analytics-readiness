@@ -200,12 +200,14 @@ components.html("""
 """, height=0)
 
 st.markdown(
-    "<div class='floka-card'><b>How it works</b><br>"
-    "Rate each statement from <b>1 (Strongly Disagree)</b> to <b>5 (Strongly Agree)</b>. "
-    "You will instantly see your maturity level, a radar chart by pillar, and tailored recommendations."
-    "<br><br><b>Rating guide</b>"  # title
-    f"{RATING_GUIDE}"              # the only place we show it
-    "</div>",
+    f"""
+<div class='floka-card'><b>How it works</b><br>
+Rate each statement from <b>1 (Strongly Disagree)</b> to <b>5 (Strongly Agree)</b>.
+You will instantly see your maturity level, a radar chart by pillar, and tailored recommendations.
+<br><br><b>Rating guide</b>
+{RATING_GUIDE}
+</div>
+""",
     unsafe_allow_html=True
 )
 
