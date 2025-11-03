@@ -154,7 +154,8 @@ with col_title:
         "<span class='badge'>People • Process • Platform • Performance</span></div>",
         unsafe_allow_html=True
     )
-    st.caption("*## How ready is your business to extract value from analytics?*")
+    st.caption("**Tagline:** *How ready is your business to extract value from analytics?*")
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # STICKY NAV (click to jump + active on scroll)
