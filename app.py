@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objs as go
 import streamlit.components.v1 as components
-import re, csv, os, datetime
+import os, datetime
 
 # -----------------------------------------------------------------------------
 # PAGE CONFIG
@@ -14,57 +14,7 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# GLOBAL HELPERS
-# -----------------------------------------------------------------------------
-def is_admin() -> bool:
-    """Show internal-only controls when URL has ?key=<ADMIN_KEY> matching secrets/env."""
-    key_in_url = ""
-    try:
-        qp = st.query_params
-        key_in_url = qp.get("key", [""])[0] if isinstance(qp.get("key"), list) else qp.get("key", "")
-    except Exception:
-        qp = st.experimental_get_query_params()
-        key_in_url = qp.get("key", [""])[0] if qp.get("key") else ""
-    expected = st.secrets.get("ADMIN_KEY", os.environ.get("ADMIN_KEY", ""))
-    return (expected != "") and (key_in_url == expected)
-
-EMAIL_RE = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
-PHONE_RE = re.compile(r"^[0-9+()\-\s]{7,}$")
-CSV_PATH = "responses.csv"
-
-def valid_email(s: str) -> bool:
-    return bool(EMAIL_RE.match((s or "").strip()))
-
-def valid_phone(s: str) -> bool:
-    return bool(PHONE_RE.match((s or "").strip()))
-
-def append_to_csv(row: list, path=CSV_PATH):
-    header = [
-        "timestamp_utc","email","mobile",
-        "overall","level",
-        "people","process","platform","performance",
-        "bottleneck"
-    ]
-    file_exists = os.path.exists(path)
-    with open(path, "a", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
-        if not file_exists:
-            w.writerow(header)
-        w.writerow(row)
-
-# --- Rating guide HTML (used once in "How it works") ---
-RATING_GUIDE = """
-<ul style="margin:6px 0 0 18px;">
-  <li><b>1 — Strongly Disagree:</b> practice largely absent or ad hoc</li>
-  <li><b>2 — Disagree:</b> some activity but inconsistent and fragile</li>
-  <li><b>3 — Neutral:</b> partially in place; varies by team</li>
-  <li><b>4 — Agree:</b> established and repeatable in most areas</li>
-  <li><b>5 — Strongly Agree:</b> optimized, measured, and continuously improved</li>
-</ul>
-"""
-
-# -----------------------------------------------------------------------------
-# THEME & CSS
+# THEME & CSS (mobile tweaks included)
 # -----------------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -74,11 +24,11 @@ st.markdown("""
   --bg:#FFFFFF;
   --card:#F5F7FF;
 }
-html, body, [class*="css"]  {
+html, body, [class*="css"]{
   color:#0A1024;
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
 }
-section.main > div { padding-top: 10px !important; }
+section.main > div { padding-top: 8px !important; }
 
 /* Primary button */
 .stButton>button {
@@ -100,6 +50,7 @@ section.main > div { padding-top: 10px !important; }
   margin-bottom: 10px;
 }
 .header-wrap {display:flex;align-items:center;gap:14px;margin-bottom:6px;}
+.header-wrap h1 { margin: 0; }
 .badge {display:inline-block;background:#E7EEFF;color:#1552FF;border:1px solid #cfe0ff;padding:2px 8px;border-radius:999px;font-size:12px;margin-left:6px;}
 .footer {text-align:center;color:#6B7280;margin:30px 0 6px;}
 hr{border-color:#eef2ff;}
@@ -118,18 +69,22 @@ hr{border-color:#eef2ff;}
   background: #FFFFFF; border-bottom: 1px solid #e6ecff;
   padding: 10px 4px; margin: -8px -8px 12px -8px;
 }
-#floka-nav .floka-wrap {max-width: 1200px; margin: 0 auto; display:flex; gap:10px; flex-wrap:wrap;}
+#floka-nav .floka-wrap {
+  max-width: 1200px; margin: 0 auto; display:flex; gap:10px; flex-wrap:nowrap;
+  overflow-x:auto; white-space:nowrap; scrollbar-width: thin;
+}
 
 /* Solid blue pills for ALL tabs */
 #floka-nav .link {
   cursor:pointer; padding:6px 12px; border-radius:888px;
   text-decoration:none; background:#1552FF; color:#FFFFFF !important;
   border:1px solid #1552FF; transition: filter .15s ease, transform .02s ease;
+  display:inline-block;
 }
 #floka-nav .link:hover, #floka-nav .link:focus { filter:brightness(0.95); }
 #floka-nav .link.active { box-shadow: 0 0 0 3px rgba(21,82,255,.18); }
 
-/* Maturity table styles (blue header, no-wrap Range) */
+/* Maturity table styles */
 .level-card { background:#F5F7FF; border:1px solid #e6ecff; border-radius:14px; padding:14px; }
 .level-table { width:100%; border-collapse:separate; border-spacing:0; border:1px solid #e6ecff; border-radius:10px; overflow:hidden; }
 .level-table thead th { background:#1552FF; color:#FFFFFF; text-align:left; }
@@ -138,14 +93,30 @@ hr{border-color:#eef2ff;}
 .level-table .range-col { white-space:nowrap; width:130px; }
 .level-table .level-col { width:140px; }
 
-/* Likert radios: inline layout */
+/* Likert radios: inline layout with wrap on mobile */
 [data-testid="stRadio"] > label { font-weight: 500; }
 [data-testid="stRadio"] > div { flex-wrap: wrap; gap: .6rem 1rem; }
-@media (min-width: 900px){
-  [data-testid="stRadio"] > div { flex-wrap: nowrap; }
+
+/* Mobile tweaks */
+@media (max-width: 900px){
+  .tagline{ font-size:18px; }
+  .header-wrap h1 { font-size: 1.6rem; }
+  .floka-card { padding: 12px; }
+  [data-testid="stRadio"] > div { gap: .5rem .7rem; }
 }
 </style>
 """, unsafe_allow_html=True)
+
+# --- Rating guide HTML (used once in "How it works") ---
+RATING_GUIDE = """
+<ul style="margin:6px 0 0 18px;">
+  <li><b>1 — Strongly Disagree:</b> practice largely absent or ad hoc</li>
+  <li><b>2 — Disagree:</b> some activity but inconsistent and fragile</li>
+  <li><b>3 — Neutral:</b> partially in place; varies by team</li>
+  <li><b>4 — Agree:</b> established and repeatable in most areas</li>
+  <li><b>5 — Strongly Agree:</b> optimized, measured, and continuously improved</li>
+</ul>
+"""
 
 # -----------------------------------------------------------------------------
 # LOGO + TITLE
@@ -222,7 +193,6 @@ You will instantly see your maturity level, a radar chart by pillar, and tailore
     unsafe_allow_html=True
 )
 
-
 # -----------------------------------------------------------------------------
 # QUESTIONS
 # -----------------------------------------------------------------------------
@@ -245,7 +215,6 @@ questions = [
     ("Performance & Value", "We track and refine models, metrics, and dashboards to keep them relevant.")
 ]
 
-# Pillar definition cards (right column)
 DEFINITIONS = {
     "People & Leadership": (
         "<div class='floka-card'><b>What the People & Leadership pillar covers</b><br>"
@@ -269,23 +238,8 @@ DEFINITIONS = {
     ),
 }
 
-# Reusable rating legend (right column)
-RATING_GUIDE = """
-<div class='floka-card'>
-  <b>Rating guide</b>
-  <ul style="margin:6px 0 0 18px;">
-    <li><b>1 — Strongly Disagree:</b> practice largely absent or ad hoc</li>
-    <li><b>2 — Disagree:</b> some activity but inconsistent and fragile</li>
-    <li><b>3 — Neutral:</b> partially in place; varies by team</li>
-    <li><b>4 — Agree:</b> established and repeatable in most areas</li>
-    <li><b>5 — Strongly Agree:</b> optimized, measured, and continuously improved</li>
-  </ul>
-</div>
-"""
+RATING_GUIDE_CARD = f"<div class='floka-card'><b>Rating guide</b>{RATING_GUIDE}</div>"
 
-# -----------------------------------------------------------------------------
-# FORM (two-column sections; Likert radios on the left)
-# -----------------------------------------------------------------------------
 likert_options = [
     "1 - Strongly Disagree",
     "2 - Disagree",
@@ -295,10 +249,8 @@ likert_options = [
 ]
 
 def render_section(section_id: str, title: str, idx_range: range, key_prefix: str) -> list:
-    """Render a section with questions on the left and definition + rating guide on the right."""
     st.markdown(f"<div id='{section_id}'></div>", unsafe_allow_html=True)
     left, right = st.columns([7,5], vertical_alignment="top")
-
     answers = []
     with left:
         st.subheader(f"🔹 {title}")
@@ -310,32 +262,21 @@ def render_section(section_id: str, title: str, idx_range: range, key_prefix: st
                 horizontal=True
             )
             answers.append(int(choice.split(" - ")[0]))
-
     with right:
         st.markdown(DEFINITIONS[title], unsafe_allow_html=True)
-       
-
     return answers
 
+# -----------------------------------------------------------------------------
+# FORM (no contact fields)
+# -----------------------------------------------------------------------------
 with st.form("quiz"):
     scores = []
-    # Sections
     scores += render_section("people", "People & Leadership", range(0, 3), "people")
     scores += render_section("process", "Process & Governance", range(3, 6), "process")
     scores += render_section("platform", "Platform & Technology", range(6, 9), "platform")
     scores += render_section("performance", "Performance & Value", range(9, 12), "performance")
 
     st.markdown("---")
-    st.subheader("Contact (to send you a debrief)")
-    left_c, right_c = st.columns(2)
-    with left_c:
-        email = st.text_input("Work email (required)", placeholder="name@company.com")
-    with right_c:
-        mobile = st.text_input("Mobile (required)", placeholder="+27 82 123 4567")
-
-    bottleneck = st.text_input("Optional: What is your biggest analytics challenge right now?")
-    st.caption("We only use your details to follow up on your results. No spam, no sharing.")
-
     submitted = st.form_submit_button("See My Results")
 
 # -----------------------------------------------------------------------------
@@ -388,13 +329,6 @@ def levels_table_html():
 # RESULTS
 # -----------------------------------------------------------------------------
 if submitted:
-    if not valid_email(email):
-        st.error("Please enter a valid work email.")
-        st.stop()
-    if not valid_phone(mobile):
-        st.error("Please enter a valid mobile number (digits, +, spaces, () or -).")
-        st.stop()
-
     people = np.mean(scores[0:3])
     process = np.mean(scores[3:6])
     platform = np.mean(scores[6:9])
@@ -403,20 +337,6 @@ if submitted:
 
     level = maturity_label(overall)
     desc  = maturity_desc(level)
-
-    row = [
-        datetime.datetime.utcnow().isoformat(),
-        email.strip(),
-        mobile.strip(),
-        round(overall, 2), level,
-        round(people, 2), round(process, 2), round(platform, 2), round(performance, 2),
-        (bottleneck or "")
-    ]
-    try:
-        append_to_csv(row)
-        st.success("Saved. Your results are below.")
-    except Exception as e:
-        st.warning(f"Could not save locally ({e}). Results still shown below.")
 
     st.markdown("<div id='results'></div>", unsafe_allow_html=True)
     st.markdown("---")
@@ -452,7 +372,7 @@ if submitted:
     radar.update_layout(
         showlegend=False,
         margin=dict(l=10,r=10,t=10,b=10),
-        height=420,
+        height=380,  # a bit shorter for mobile friendliness
         polar=dict(
             radialaxis=dict(visible=True, range=[1,5], tick0=1, dtick=0.5),
             angularaxis=dict(
@@ -532,15 +452,6 @@ if submitted:
             "refine what is used, and A/B test changes where feasible. Share short win stories that link action to outcome; over time "
             "this builds confidence, unlocks further funding, and shifts analytics from reporting to results."
         )
-
-    if is_admin() and os.path.exists(CSV_PATH):
-        with open(CSV_PATH, "rb") as f:
-            st.download_button(
-                label="⬇️ Download leads (CSV)",
-                data=f.read(),
-                file_name="floka_analytics_leads.csv",
-                mime="text/csv"
-            )
 
 # -----------------------------------------------------------------------------
 # FOOTER
