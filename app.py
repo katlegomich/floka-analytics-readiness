@@ -12,24 +12,64 @@ st.set_page_config(
     page_icon="floka_logo.png",
     layout="wide"
 )
-# ---- Hide Streamlit chrome when embedded ----
+# 🔒 Hide Streamlit chrome (badge, toolbar, header/footer) when embedded
+st.set_page_config(
+    page_title="FLOKA • Analytics Maturity Diagnostic",
+    page_icon="floka_logo.png",
+    layout="wide",
+    # also remove menu items just in case
+    menu_items={"Get Help": None, "Report a bug": None, "About": None}
+)
+
+# -- CSS: target old/new selectors Streamlit uses for badge/toolbar
 st.markdown("""
 <style>
-/* Old + new toolbars */
-div[data-testid="stToolbar"] { display:none !important; }
-div[data-testid="stDecoration"] { display:none !important; }
+/* Top menu & header */
+#MainMenu {visibility:hidden;}
+header {visibility:hidden;}
 
-/* Footer (where "Built with Streamlit" lives) */
-footer { visibility:hidden; height:0; }
+/* Newer toolbar/decoration strips */
+div[data-testid="stToolbar"]{display:none !important;}
+div[data-testid="stDecoration"]{display:none !important;}
 
-/* "viewer badge" variants Streamlit uses */
-[class*="viewerBadge"] { display:none !important; }
+/* Status widget sometimes used for the cloud toolbar */
+div[data-testid="stStatusWidget"]{display:none !important;}
 
-/* Legacy IDs (covers older Streamlit builds just in case) */
-#MainMenu { visibility:hidden; }
-header { visibility:hidden; }
+/* Viewer badge variations (class names are hashed, so use partial matches) */
+[class*="viewerBadge"]{display:none !important;}
+a[class*="viewerBadge"]{display:none !important;}
+
+/* Footer where the "Built with Streamlit" line can appear */
+footer {visibility:hidden; height:0 !important; padding:0 !important; margin:0 !important;}
 </style>
 """, unsafe_allow_html=True)
+
+# -- JS safety net: if Streamlit changes class names, remove any matching nodes at runtime
+components.html("""
+<script>
+(function(){
+  function hideChrome(){
+    const selectors = [
+      'div[data-testid="stToolbar"]',
+      'div[data-testid="stDecoration"]',
+      'div[data-testid="stStatusWidget"]',
+      '[class*="viewerBadge"]',
+      'footer',
+      '#MainMenu',
+      'header'
+    ];
+    try{
+      selectors.forEach(sel=>{
+        document.querySelectorAll(sel).forEach(el=>{ el.style.display='none'; el.style.visibility='hidden'; });
+      });
+    }catch(e){}
+  }
+  // run now and keep watching (covers late mounts)
+  hideChrome();
+  new MutationObserver(hideChrome).observe(document.documentElement, {childList:true, subtree:true});
+})();
+</script>
+""", height=0)
 
 # -----------------------------------------------------------------------------
 # THEME & CSS (mobile tweaks included)
