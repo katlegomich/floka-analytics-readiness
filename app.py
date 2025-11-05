@@ -12,6 +12,24 @@ st.set_page_config(
     page_icon="floka_logo.png",
     layout="wide"
 )
+# ---- Hide Streamlit chrome when embedded ----
+st.markdown("""
+<style>
+/* Old + new toolbars */
+div[data-testid="stToolbar"] { display:none !important; }
+div[data-testid="stDecoration"] { display:none !important; }
+
+/* Footer (where "Built with Streamlit" lives) */
+footer { visibility:hidden; height:0; }
+
+/* "viewer badge" variants Streamlit uses */
+[class*="viewerBadge"] { display:none !important; }
+
+/* Legacy IDs (covers older Streamlit builds just in case) */
+#MainMenu { visibility:hidden; }
+header { visibility:hidden; }
+</style>
+""", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
 # THEME & CSS (mobile tweaks included)
