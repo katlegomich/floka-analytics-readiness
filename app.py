@@ -93,16 +93,25 @@ hr{border-color:#eef2ff;}
 .level-table .range-col { white-space:nowrap; width:130px; }
 .level-table .level-col { width:140px; }
 
-/* Likert radios: inline layout with wrap on mobile */
-[data-testid="stRadio"] > label { font-weight: 500; }
-[data-testid="stRadio"] > div { flex-wrap: wrap; gap: .6rem 1rem; }
+/* Likert radios: tidy grid on mobile, single row on desktop */
+[data-testid="stRadio"] > div {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;   /* 2 columns on phones */
+  column-gap: 1rem;
+  row-gap: .5rem;
+}
+[data-testid="stRadio"] > div > label {
+  width: 100%;                      /* each option fills its grid cell */
+  margin: 0 !important;
+}
 
-/* Mobile tweaks */
-@media (max-width: 900px){
-  .tagline{ font-size:18px; }
-  .header-wrap h1 { font-size: 1.6rem; }
-  .floka-card { padding: 12px; }
-  [data-testid="stRadio"] > div { gap: .5rem .7rem; }
+/* Desktop: keep them on one line, evenly spaced */
+@media (min-width: 900px){
+  [data-testid="stRadio"] > div {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: .6rem 1rem;
+  }
 }
 </style>
 """, unsafe_allow_html=True)
