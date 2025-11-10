@@ -12,6 +12,30 @@ st.set_page_config(
     page_icon="floka_logo.png",
     layout="wide"
 )
+# ---- ALIGN LIKERT RADIO OPTIONS ----
+st.markdown("""
+<style>
+/* Put the five radio options on one line with equal spacing */
+div[data-baseweb="radio"] > div {
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr);
+  column-gap: 1rem;
+}
+/* Keep labels on one line to avoid wrapping that causes misalignment */
+div[data-baseweb="radio"] label {
+  white-space: nowrap;
+  text-align: center;
+}
+/* Nudge the circle + text to sit nicely centered in each cell */
+div[data-baseweb="radio"] .st-bk {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  justify-content: center;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # 🔒 Hide Streamlit chrome (badge, toolbar, header/footer) when embedded
 st.set_page_config(
     page_title="FLOKA • Analytics Maturity Diagnostic",
